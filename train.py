@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import cPickle as pickle
-import sys 
+import os
 
 # Array showing guitar string's relative pitches, in semi-tones, with "0" being low E
 # ["Low E", "A", "D", "G", "B", "High E"]
@@ -29,11 +29,13 @@ def process(filename):
 
     f = open(filename, 'r')
     data = pickle.load(f)
-    nn_train(data, label)
     f.close()
 
+    return data, label
+
 def main():
-    process(sys.argv[1])
+    files = ["Data/" + f for f in os.listdir('Data') if os.path.isfile("Data/" + f) and "DS_Store" not in f]
+    nn_train(process, files)
 
 if(__name__ == "__main__"):
     main()
