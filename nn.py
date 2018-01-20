@@ -10,7 +10,7 @@ display_step = 50
 n_hidden_1 = 32 # 1st layer number of neurons
 n_hidden_2 = 32 # 2nd layer number of neurons
 num_input = 31 # 31 fft bins
-num_classes = 6 # strings
+num_classes = 1 # midi note
 
 # tf Graph input
 X = tf.placeholder("float", [None, num_input])
@@ -39,24 +39,24 @@ def neural_net(x):
     out_layer = tf.matmul(layer_2, weights['out']) + biases['out']
     return out_layer
 
+# Construct model
+logits = neural_net(X)
+prediction = tf.nn.softmax(logits)
+
+# Define loss and optimizer
+loss_op = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(
+    logits=logits, labels=Y))
+optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+train_op = optimizer.minimize(loss_op)
+
+# Evaluate model
+correct_pred = tf.equal(tf.argmax(prediction, 1), tf.argmax(Y, 1))
+accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+
+# Initialize the variables (i.e. assign their default value)
+init = tf.global_variables_initializer()
+
 def nn_train(get_data, filenames):
-    # Construct model
-    logits = neural_net(X)
-    prediction = tf.nn.softmax(logits)
-
-    # Define loss and optimizer
-    loss_op = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(
-        logits=logits, labels=Y))
-    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
-    train_op = optimizer.minimize(loss_op)
-
-    # Evaluate model
-    correct_pred = tf.equal(tf.argmax(prediction, 1), tf.argmax(Y, 1))
-    accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
-
-    # Initialize the variables (i.e. assign their default value)
-    init = tf.global_variables_initializer()
-
     saver = tf.train.Saver()
 
     # Start training
@@ -67,7 +67,8 @@ def nn_train(get_data, filenames):
 
         for filename in filenames:
             X_train, y_train = get_data(filename)
-            y_train = np.asarray(y_train).reshape(1, 6)
+            X_train = X_train[:len(X_train)*3/4]
+            y_train = np.asarray(y_train).reshape(1, 1)
             for (step, m) in enumerate(X_train):
                 # Run optimization op (backprop)
                 x_train = np.asarray(m).astype(np.float32).reshape(1, 31)
@@ -81,9 +82,18 @@ def nn_train(get_data, filenames):
                           "{:.4f}".format(loss) + ", Training Accuracy= " + \
                           "{:.3f}".format(acc))
 
+        saver.save(sess, './train_save/model')
         print("Optimization Finished!")
 
-    # Calculate accuracy for MNIST test images
-    # print("Testing Accuracy:", \
-    #     sess.run(accuracy, feed_dict={X: mnist.test.images,
-    #                                   Y: mnist.test.labels}))
+def nn_eval(get_data, filenames):
+    # Start training
+    with tf.Session() as sess:
+        saver = tf.train.Saver()
+        saver.restore(sess, './train_save/model')
+        for filename in filenames:
+            X_test, y_test = get_data(filename)
+            X_test = X_test[len(X_test)*3/4:]
+            y_test = np.asarray(y_test).reshape(1, 1)
+            print("Testing Accuracy:", \
+                sess.run(accuracy, feed_dict={X: X_test,
+                                              Y: y_test}))

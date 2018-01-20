@@ -8,7 +8,7 @@ import os
 strings = [40, 45, 50, 55, 60, 65];
 
 # our neural network
-from nn import nn_train
+from nn import nn_train, nn_eval
 
 def midi_to_label(midi):
     if (midi < strings[0]):
@@ -25,7 +25,8 @@ def midi_to_label(midi):
     return label
 
 def process(filename):
-    label = midi_to_label(int(filename.split('/')[-1]))
+    label = int(filename.split('/')[-1])
+    #label = midi_to_label(int(filename.split('/')[-1]))
 
     f = open(filename, 'r')
     data = pickle.load(f)
@@ -36,6 +37,7 @@ def process(filename):
 def main():
     files = ["Data/" + f for f in os.listdir('Data') if os.path.isfile("Data/" + f) and "DS_Store" not in f]
     nn_train(process, files)
+    nn_eval(process, files)
 
 if(__name__ == "__main__"):
     main()
