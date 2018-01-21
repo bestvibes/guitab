@@ -2,14 +2,13 @@ import tensorflow as tf
 import numpy as np
 
 # Parameters
-learning_rate = 0.1
-batch_size = 128
+learning_rate = 0.001
 display_step = 50
 
 # Network Parameters
-n_hidden_1 = 32 # 1st layer number of neurons
-n_hidden_2 = 32 # 2nd layer number of neurons
-num_input = 31 # 31 fft bins
+n_hidden_1 = 512 # 1st layer number of neurons
+n_hidden_2 = 512 # 2nd layer number of neurons
+num_input = 255 # 31 fft bins
 num_classes = 1 # midi note
 
 # tf Graph input
@@ -19,12 +18,12 @@ Y = tf.placeholder("float", [None, num_classes])
 # Store layers weight & bias
 weights = {
     'h1': tf.Variable(tf.random_normal([num_input, n_hidden_1])),
-    'h2': tf.Variable(tf.random_normal([n_hidden_1, n_hidden_2])),
-    'out': tf.Variable(tf.random_normal([n_hidden_2, num_classes]))
+    #'h2': tf.Variable(tf.random_normal([n_hidden_1, n_hidden_2])),
+    'out': tf.Variable(tf.random_normal([n_hidden_1, num_classes]))
 }
 biases = {
     'b1': tf.Variable(tf.random_normal([n_hidden_1])),
-    'b2': tf.Variable(tf.random_normal([n_hidden_2])),
+    #'b2': tf.Variable(tf.random_normal([n_hidden_2])),
     'out': tf.Variable(tf.random_normal([num_classes]))
 }
 
@@ -33,19 +32,22 @@ biases = {
 def neural_net(x):
     # Hidden fully connected layer with 256 neurons
     layer_1 = tf.add(tf.matmul(x, weights['h1']), biases['b1'])
+    layer_1 = tf.nn.relu(layer_1)
     # Hidden fully connected layer with 256 neurons
-    layer_2 = tf.add(tf.matmul(layer_1, weights['h2']), biases['b2'])
+    #layer_2 = tf.add(tf.matmul(layer_1, weights['h2']), biases['b2'])
+    #layer_2 = tf.nn.relu(layer_2)
     # Output fully connected layer with a neuron for each class
-    out_layer = tf.matmul(layer_2, weights['out']) + biases['out']
+    #out_layer = tf.matmul(layer_2, weights['out']) + biases['out']
+    out_layer = tf.matmul(layer_1, weights['out']) + biases['out']
     return out_layer
 
 # Construct model
 logits = neural_net(X)
+logits = tf.transpose(logits)
 prediction = tf.nn.softmax(logits)
 
 # Define loss and optimizer
-loss_op = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(
-    logits=logits, labels=Y))
+loss_op = tf.reduce_mean(tf.square(logits-Y))
 optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
 train_op = optimizer.minimize(loss_op)
 
@@ -68,10 +70,10 @@ def nn_train(get_data, filenames):
         for filename in filenames:
             X_train, y_train = get_data(filename)
             X_train = X_train[:len(X_train)*3/4]
-            y_train = np.asarray(y_train).reshape(1, 1)
+            y_train = np.asarray(y_train).reshape(1, num_classes)
             for (step, m) in enumerate(X_train):
                 # Run optimization op (backprop)
-                x_train = np.asarray(m).astype(np.float32).reshape(1, 31)
+                x_train = np.asarray(m).astype(np.float32).reshape(1, num_input)
                 sess.run(train_op, feed_dict={X: x_train, Y: y_train})
 
                 if step % display_step == 0 or step == 1:
@@ -93,7 +95,8 @@ def nn_eval(get_data, filenames):
         for filename in filenames:
             X_test, y_test = get_data(filename)
             X_test = X_test[len(X_test)*3/4:]
-            y_test = np.asarray(y_test).reshape(1, 1)
-            print("Testing Accuracy:", \
-                sess.run(accuracy, feed_dict={X: X_test,
-                                              Y: y_test}))
+            y_test = np.asarray(y_test).reshape(1, num_classes)
+            for m in X_test:
+                x_test = np.asarray(m).astype(np.float32).reshape(1, num_input)
+                #print "Accuracy: %s" % (sess.run(accuracy, feed_dict={X: x_test, Y: y_test}))
+                print "Got: %s Want: %s" % (sess.run(logits, feed_dict={X: x_test}), y_test)
