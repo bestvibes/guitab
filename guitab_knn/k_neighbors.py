@@ -15,7 +15,7 @@ num_classes += 1 # for empty note
 K = 15
 
 # Training data
-df = pd.read_csv("../data2.csv", header=None)
+df = pd.read_csv("data2.csv", header=None)
 df = df.sample(frac=1, random_state=50)
 TARGET = [df.columns[-1]]
 FEATS = [c for c in df.columns if c != TARGET[0]]
