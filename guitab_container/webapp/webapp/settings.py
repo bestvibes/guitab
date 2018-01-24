@@ -25,6 +25,9 @@ SECRET_KEY = '^8+o*!)hzof!tr8f1o&*qvibfh1ucj)4)nnpd7i@hro$+y)9)e'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+# Allow large POST requests
+DATA_UPLOAD_MAX_MEMORY_SIZE = None
+
 ALLOWED_HOSTS = [
     'nxtpitch.herokuapp.com',
     'localhost',
