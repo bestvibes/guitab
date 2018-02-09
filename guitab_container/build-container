@@ -1,0 +1,12 @@
+HOST=gcr.io
+PROJ_ID=cobalt-alliance-192707
+IMAGE_NAME=guitab-ml
+
+#Build
+#if [ $1 = "build" ]; then
+	docker build -t guitab-ml .
+	docker tag $IMAGE_NAME "$HOST/$PROJ_ID/$IMAGE_NAME"
+#fi
+
+#Push to GCloud
+gcloud docker -- push "$HOST/$PROJ_ID/$IMAGE_NAME"
