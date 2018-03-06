@@ -18,7 +18,11 @@ for curr_num in midi_nums:
 	# Naming scheme for pickle files was 0xx where
 	# xx was the 2 digit midi number.
 	# Update if using a different naming scheme
-	data_from_pickle = pickle.load(open("0" + str(curr_num)))
+	try:
+		data_from_pickle = pickle.load(open(str(curr_num)))
+	except IOError:
+		print("No file for " + str(curr_num))
+		continue
 
 	with open(OUTPUT_FILE, 'a') as csv_file:
 		csv_writer = csv.writer(csv_file, delimiter=',')
